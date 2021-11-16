@@ -1,7 +1,7 @@
 # Flight_Predictor
 ## Scenario 1: Run components Zookeeper, Kafka, MongoDB, Spark Streaming and Flask independently
 
-# Instalación
+# Installation
 It's necessary to install the following components:
 
  - [Intellij](https://www.jetbrains.com/help/idea/installation-guide.html) (jdk_1.8)
@@ -176,7 +176,7 @@ Also, when running the spark-submit command, you have to add at least these two 
 
 ```
 
-## Scenario 2: Create docker containers for each component
+## Scenario 2: Run components on docker containers
 Create docker network so the containers are able to connect to each other.
 ```
 docker network create flight_prediction
@@ -189,8 +189,42 @@ docker-compose -f zk_kafka.yml up
 ### MongoDB
 In this case, as the deployment is test in a laptop, the Kafka cluster will contain only one Broker.
 ```
-docker run --rm --network flight_prediction \
--p 27017:27017 \
-mongo:5.0.3
+docker-compose -f mongo.yml up
 ```
 ### Spark Streaming
+It's been included in "scenario_2/Spark" folder a Dockerfile to build an Ubuntu-based image that includes Spark, the trained models and the compiled JAR file. The MakePrediction.scala file has been modified to connect to container "mongodb" on port 27017 and to "kafka" container on port 9092. The built image can be run using the following command:
+```
+docker run --rm --network flight_prediction \
+crimson160/practica_fbid:spark
+```
+### Flask
+It's been included in "scenario_2/Flask" folder a Dockerfile to build a Python-based image of the Flask application. On container startup, the topics provided in the environment variable "TOPIC_NAME" are created if don't exist. Furthermore, mongo is seeded with data in "origin_dest_distances.jsonl".
+```
+docker run -p 9999:5000 --rm --network flight_prediction \
+-e MONGODB_HOST=mongodb \
+-e MONGODB_PORT=27017 \
+-e BOOTSTRAP_SERVERS=kafka:9092 \
+-e TOPIC_NAME=flight_delay_classification_request \
+-e TOPIC_PARTITIONS=1 \
+-e TOPIC_REPLICATION=1 \
+crimson160/practica_fbid:flask
+```
+Now visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka)
+## Scenario 3: Start the whole Flight_Predictor with docker compose
+There is a flight_predictor.yml file in "scenario3". To start Flight_Predictor use the following command:
+```
+docker-compose -f flight_predictor.yml up
+```
+## Scenario 4: Start the whole Flight_Predictor with docker compose. Spark Streaming predictions are written to a Kafka topic and the Flask app consume the predictions from that topic
+In this case, the MakePrediction.scala file has been modified to send the predictions to a Kafka topic ("flight_prediction_response") instead of sending it to MongoDB. A Kafka consumer in Flask subscribes to that topic and the page shows the prediction after they are consumed from the topic.
+```
+docker-compose -f flight_predictor_kf_pred_resp.yml up
+```
+To see the predictions being written to the topic, another Kafka consumer can be used. After accessing the Kafka container 
+```
+/bin/kafka-console-consumer \
+    --bootstrap-server localhost:9092 \
+    --topic flight_prediction_response \
+    --from-beginning
+
+```
