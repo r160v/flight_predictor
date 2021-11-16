@@ -188,7 +188,7 @@ The "scenario 3" folder includes a Spark and Flask folders to build the images, 
 ```
 docker-compose -f flight_predictor_kf_pred_resp.yml up
 ```
-**When running the Flask container, it is mandatory that the environment variable TOPIC_NAME includes at least flight_delay_classification_request;flight_prediction_response topics. **More topics can be added (separated with a semicolon) and the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in TOPIC_NAME and each value in TOPIC_PARTITIONS and TOPIC_REPLICATION.**
+**When running the Flask container, it is mandatory that the environment variable TOPIC_NAME includes at least flight_delay_classification_request;flight_prediction_response topics.** More topics can be added (separated with a semicolon) and the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in TOPIC_NAME and each value in TOPIC_PARTITIONS and TOPIC_REPLICATION.**
 ```
 - TOPIC_NAME=flight_delay_classification_request;flight_prediction_response
 - TOPIC_PARTITIONS=1;2
