@@ -176,17 +176,25 @@ Also, when running the spark-submit command, you have to add at least these two 
 
 ```
 ## Scenario 2: Start Flight Predictor with docker compose
-There is a flight_predictor.yml file in "scenario3". To start Flight_Predictor use the following command:
+There is a flight_predictor.yml file in "scenario2". To start Flight_Predictor use the following command:
 ```
 docker-compose -f flight_predictor.yml up
 ```
 Visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka) to use the application.
 ## Scenario 3: Start Flight Predictor with docker compose. Spark Streaming predictions are written to a Kafka topic and the Flask app consume the predictions from that topic
 In this case, the MakePrediction.scala file has been modified to send the predictions to a Kafka topic ("flight_prediction_response") instead of sending it to MongoDB. A Kafka consumer in Flask subscribes to that topic and the page shows the prediction after they are consumed from the topic.
+The "scenario 3" folder includes a Spark and Flask folders to build the images, as well as a "flight_predictor_kf_pred_resp.yml" file to start the scenario.
+
 ```
 docker-compose -f flight_predictor_kf_pred_resp.yml up
 ```
-To see the predictions being written to the topic, another Kafka consumer can be used. After accessing the Kafka container run the following command:
+**When running the Flask container, it is mandatory that the environment variable TOPIC_NAME includes at least flight_delay_classification_request;flight_prediction_response topics. **More topics can be added (separated with a semicolon) and the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in TOPIC_NAME and each value in TOPIC_PARTITIONS and TOPIC_REPLICATION.**
+```
+- TOPIC_NAME=flight_delay_classification_request;flight_prediction_response
+- TOPIC_PARTITIONS=1;2
+- TOPIC_REPLICATION=3;4
+```
+To see the predictions being written to the topic flight_prediction_response, another Kafka consumer can be used. After accessing the Kafka container run the following command:
 ```
 /bin/kafka-console-consumer \
     --bootstrap-server localhost:9092 \
