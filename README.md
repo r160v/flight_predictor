@@ -188,7 +188,7 @@ The "scenario 3" folder includes a Spark and Flask folders to build the images, 
 ```
 docker-compose -f flight_predictor_kf_pred_resp.yml up
 ```
-**When running the Flask container, it is mandatory that the environment variable TOPIC_NAME includes at least flight_delay_classification_request;flight_prediction_response topics.** More topics can be added (separated with a semicolon), the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in TOPIC_NAME and each value in TOPIC_PARTITIONS and TOPIC_REPLICATION.**
+**When running the Flask container, it is mandatory that the environment variable `TOPIC_NAME` includes at least flight_delay_classification_request;flight_prediction_response topics.** More topics can be added (separated with a semicolon), the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in `TOPIC_NAME` and each value in `TOPIC_PARTITIONS` and `TOPIC_REPLICATION`.**
 ```
 - TOPIC_NAME=flight_delay_classification_request;flight_prediction_response
 - TOPIC_PARTITIONS=1;2
@@ -202,3 +202,64 @@ To see the predictions being written to the topic flight_prediction_response, an
     --from-beginning
 ```
 Visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka) to use the application.
+## Train the prediction model using Apache Airflow
+To train the prediction model using Airflow, download the "scenario_1" folder. 
+- Install the requirements in the root of scenario_1 and the one in "resources/airflow":
+```
+cd scenario_1
+pip install -r requirements.txt
+
+cd scenario_1/resources/airflow
+pip install -r requirements.txt -c constraints.txt
+
+```
+- Set the `PROJECT_HOME` env variable with the path of you cloned repository, for example:
+```
+export PROJECT_HOME=/home/user/Desktop/scenario_1
+```
+- Initialize the database tables
+```
+airflow db init
+```
+- Configure airflow environment
+
+```shell
+export AIRFLOW_HOME=~/airflow
+mkdir $AIRFLOW_HOME/dags
+mkdir $AIRFLOW_HOME/logs
+mkdir $AIRFLOW_HOME/plugins
+
+airflow users create \
+    --username admin \
+    --firstname Jack \
+    --lastname  Sparrow\
+    --role Admin \
+    --email example@mail.org
+```
+- Make DAG visible to Airflow  *-*-*-*-*--*
+In "resources/airflow/" there is setup.py file that defines the DAG and prediction task. The default location for the DAGs is ~/airflow/dags, but more generally it is $AIRFLOW_HOME/dags. Copy setup.py to $AIRFLOW_HOME/dags (or make a symlink).
+- Make sure that the pipeline is parsed successfully
+```
+python $AIRFLOW_HOME/dags/setup.py
+```
+- Check that Airflow can see the DAG
+```
+airflow dags list
+```
+- List tasks within agile_data_science_batch_prediction_model_training dag
+```
+airflow tasks list agile_data_science_batch_prediction_model_training
+```
+In this case there's only one task: pyspark_train_classifier_model.
+- Test the task using the CLI
+```
+airflow tasks test agile_data_science_batch_prediction_model_training pyspark_train_classifier_model 2016-12-12 /*/*/*/*/*/*/*/*/*/*/*/*/*
+```
+The trained model files should be generated in the "models" folder.
+- Start airflow scheduler and webserver
+```shell
+airflow webserver --port 8080
+airflow scheduler
+```
+Vistit http://localhost:8080/home for the web version of Apache Airflow.
+
