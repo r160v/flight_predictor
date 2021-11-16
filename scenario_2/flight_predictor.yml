@@ -1,0 +1,82 @@
+version: '2'
+services:
+  zookeeper:
+    image: crimson160/practica_fbid:zookeeper
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181  
+  
+  kafka:
+    image: crimson160/practica_fbid:kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  
+  mongodb:
+    image: crimson160/practica_fbid:mongodb
+    container_name: mongodb
+    ports:
+      - 27017    
+        
+  spark:
+    image: crimson160/practica_fbid:spark
+    container_name: spark_m
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+  spark-worker-1:
+    image: crimson160/practica_fbid:spark
+    container_name: worker1
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+  spark-worker-2:
+    image: crimson160/practica_fbid:spark
+    container_name: worker2
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    
+  flask:
+    image: crimson160/practica_fbid:flask
+    container_name: flask
+    depends_on:
+      - kafka
+      - mongodb
+    ports:
+      - 9999:5000
+    environment:
+      - MONGODB_HOST=mongodb
+      - MONGODB_PORT=27017
+      - BOOTSTRAP_SERVERS=kafka:9092
+      - TOPIC_NAME=flight_delay_classification_request
+      - TOPIC_PARTITIONS=1
+      - TOPIC_REPLICATION=1
+      
+      
+
