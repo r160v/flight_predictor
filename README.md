@@ -162,7 +162,7 @@ Also, when running the spark-submit command, you have to add at least these two 
   ## Check the predictions records inserted in MongoDB
   ```
    $ mongo
-   > use use agile_data_science;
+   > use agile_data_science;
    >db.flight_delay_classification_response.find();
   
   ```
