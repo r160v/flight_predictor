@@ -182,7 +182,7 @@ docker-compose -f flight_predictor.yml up
 ```
 Visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka) to use the application.
 ## Scenario 3: Start Flight Predictor with docker compose. Spark Streaming predictions are written to a Kafka topic and the Flask app consume the predictions from that topic
-In this case, the MakePrediction.scala file has been modified to send the predictions to a Kafka topic ("flight_prediction_response") instead of sending it to MongoDB. A Kafka consumer in Flask subscribes to that topic and the page shows the prediction after they are consumed from the topic.
+In this case, the MakePrediction.scala file has been modified to send the predictions to a Kafka topic ("flight_prediction_response") instead of sending it to MongoDB. A Kafka consumer in Flask subscribes to that topic and the page shows the prediction after it is consumed from the topic.
 The "scenario 3" folder includes a Spark and Flask folders to build the images, as well as a "flight_predictor_kf_pred_resp.yml" file to start the scenario.
 
 ```
