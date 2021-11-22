@@ -202,6 +202,63 @@ To see the predictions being written to the topic flight_prediction_response, an
     --from-beginning
 ```
 Visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka) to use the application.
+## Scenario 4: Deploy Flight Predictor using Kubernetes and Minikube
+- Install Minikube using a Docker container or virtual machine using [https://minikube.sigs.k8s.io/docs/start/](https://minikube.sigs.k8s.io/docs/start/). A minimum of 5 GB of RAM is recommended for the VM. Once installed start the container or VM.
+- Open a terminal and start minikube to be able to use kubectl:
+```
+minikube start --vm-driver=virtualbox
+```
+In this case the virtualization hypervisor used is Virtualbox. If another one is used, the vm-driver flag has to be set accordingly.
+- Deploy Kafka and Zookeeper
+To deploy Kafka and Zookeeper, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/kafka) is used. It is important to notice that it provides the DNS name `my-release-kafka-0.my-release-kafka-headless.default.svc.cluster.local` with port `9092` to connect to the Kafka cluster from within the Kubernetes cluster. 
+To add the Kafka repository use the following command:
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+To install the chart:
+```
+helm install my-release bitnami/kafka
+```
+- Deploy MondoDB
+To deploy Kafka and Zookeeper, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/mongodb) is used. It is important to notice that it provides the DNS name `mongodb-dev.default.svc.cluster.local` with port `27017` to connect to the Kafka cluster from within the Kubernetes cluster. 
+To add the MongoDB repository use the following command:
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami (if you haven't previously done)
+```
+To install the chart:
+```
+helm install mongodb-dev bitnami/mongodb --set auth.enabled=false
+```
+- Deploy Spark
+The MakePrediction.scala file has been modified to take into account the DNS names of MongoDB and Kafka in the Kubernetes cluster. There is a "Spark" folder in "scenario_4", where a new flight_prediction_2.12-0.1.jar as been compiled and packaged. After doing this, it's necessary to create a new image using the provided Dockerfile. The files spark-deployment.yaml and spark-service.yaml are provided in "scenario_4" to create the components necessary for Spark.
+To deploy Spark:
+```
+kubectl apply -f spark-deployment.yaml
+```
+To deploy the Spark service:
+```
+kubectl apply -f spark-service.yaml
+```
+- Deploy Flask
+To deploy Flask:
+```
+kubectl apply -f flask-deployment.yaml
+```
+To deploy the Flask service:
+```
+kubectl apply -f flask-service.yaml
+```
+The Flask service is external, it provides access to the Flask app through the nodePort 30005.
+- Make Minikube assign an external IP to the Flask service
+List running services and take the Flask service:
+```
+kubectl get services
+```
+Use the following command to make Minikube assign an external IP to the Flask service:
+```
+minikube service <flask_service>
+```
+Visit [http://localhost:30005/flights/delays/predict_kafka](http://localhost:30005/flights/delays/predict_kafka) to use the application.
 ## Train the prediction model using Apache Airflow
 To train the prediction model using Airflow, download the "scenario_1" folder. 
 - Install the requirements in the root of scenario_1 and the one in "resources/airflow":
