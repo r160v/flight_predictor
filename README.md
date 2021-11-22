@@ -1,4 +1,4 @@
-# Flight_Predictor
+# Flight Predictor
 ## Scenario 1: Run components Zookeeper, Kafka, MongoDB, Spark Streaming and Flask independently
 
 # Installation
@@ -188,13 +188,14 @@ A new file mongo_seed.py has been created to seed the Mongo database with the di
 
 **When running the Flask container, it is mandatory that the environment variable `TOPIC_NAME` includes at least flight_delay_classification_request,flight_prediction_response topics.** More topics can be added (separated with commas), the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in `TOPIC_NAME` and each value in `TOPIC_PARTITIONS` and `TOPIC_REPLICATION`.**
 
-### Start Flight_Predictor (Predictions sent to MongoDB)
+### Start Flight Predictor (Predictions sent to MongoDB)
 
 To start the Flight Predictor using docker compose enter the following command:
 ```
 docker-compose -f flight_predictor.yml up
 ```
-### Start Flight_Predictor (Predictions written to Kafka)
+A Spark master and two workers made up the Spark cluster.
+### Start Flight Predictor (Predictions written to Kafka)
 
 To start the Flight Predictor using docker compose enter the following command:
 ```
