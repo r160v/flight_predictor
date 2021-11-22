@@ -98,7 +98,7 @@ It's necessary to install the following components:
   }
 
   ```
-  ## Train and Save de the model with PySpark mllib
+  ## Train and save the model with PySpark mllib
   In a console go to the base directory of the cloned repo, then go to the `practica_big_data_2019` directory
   ```
     cd practica_big_data_2019
@@ -260,7 +260,15 @@ minikube service <flask_service>
 ```
 Visit [http://localhost:30005/flights/delays/predict_kafka](http://localhost:30005/flights/delays/predict_kafka) to use the application.
 ## Train the prediction model using Apache Airflow
-To train the prediction model using Airflow, download the "scenario_1" folder. 
+Airflow is a platform to programmatically author, schedule and monitor workflows. It uses Directed Acyclic Graphs (DAGs) to create data pipelines. To define a DAG a DAG definition file is used.
+A DAG definition file is composed of three main parts:
+- Importing modules
+- Default arguments
+- DAG instantiation
+- Tasks definition
+- Setting up dependencies
+# Train the prediction model using Airflow
+- Download "scenario_1" folder
 - Install the requirements in the root of scenario_1 and the one in "resources/airflow":
 ```
 cd scenario_1
