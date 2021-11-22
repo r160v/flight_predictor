@@ -180,8 +180,13 @@ In "scenario_2", the folders "Spark" and "Flask" are included. The original code
 - Spark
 
 As for Spark, the MakePrediction.scala file now uses environment variables to define the Kafka bootstrap servers and the MongoDB server address and port number. Besides, the environment variable `SEND_PREDICTION_TO`, located in "Build", has been added to allow Spark to send the prediction to a Kafka topic instead of to MongoDB. This removes the need of the web app to be constantly polling MongoDB until it gets a prediction. Now, the web app acts as a consumer of the Kafka topic `flight_prediction_response`, when a prediction is written to the topic, it shows it on screen. In "Spark" there is also a Dockerfile and the necessary files to build an image.
-The environment variables `MONGODB_HOST`, `MONGODB_PORT`, `BOOTSTRAP_SERVERS` (if more than one separate them with commas) and `SEND_PREDICTION_TO` need to be set when running the container. If `SEND_PREDICTION_TO` is set to mongo, the predictions will be sent to MongoDB, otherwise they will be written to the topic.
+The environment variables `MONGODB_HOST`, `MONGODB_PORT`, `BOOTSTRAP_SERVERS` (if more than one separate them with commas) and `SEND_PREDICTION_TO` need to be set when running the container. If `SEND_PREDICTION_TO` is set to "mongo", the predictions will be sent to MongoDB, otherwise they will be written to the topic.
 - Flask (Web App)
+
+The file flight_predict.py in /code/resources/web also uses now environment variables to define the Kafka bootstrap servers and the MongoDB server address and port number. Furthermore, a `RETRIEVE_PREDICTION_FROM` has been introduced to indicate whether the prediction is retrieved from MongoDB or the Kafka topic `flight_prediction_response`. The configuration between `RETRIEVE_PREDICTION_FROM` and `SEND_PREDICTION_TO` in Spark needs to be coherent: both must be set to "mongo" or "kafka" in order for the application to work correctly.
+A new file mongo_seed.py has been created to seed the Mongo database with the distance records when the web app starts. After it starts, it also executes the create_topic.py script, which creates the topics `flight_delay_classification_request` and `flight_prediction_response` if they don't exist.
+
+**When running the Flask container, it is mandatory that the environment variable `TOPIC_NAME` includes at least flight_delay_classification_request,flight_prediction_response topics.** More topics can be added (separated with commas), the Flask app will create them (if don't exist) on startup. **There must be a one-to-one correspondence between each topic in `TOPIC_NAME` and each value in `TOPIC_PARTITIONS` and `TOPIC_REPLICATION`.**
 
 There is a flight_predictor.yml file in "scenario2". To start Flight_Predictor use the following command:
 ```
