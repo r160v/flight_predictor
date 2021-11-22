@@ -141,7 +141,7 @@ Also, when running the spark-submit command, you have to add at least these two 
   spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 ./<generated_package>.jar
      
   ``` 
-   Be carefull with the packages version because if you are using another version of spark, kafka or mongo you have to choose the correspondent version to your installation. This packages work with Spark 2.4.0, kafka_2.12-2.3.0 and mongo superior to 2.6
+   Be carefull with the packages version because if you are using another version of spark, kafka or mongo you have to choose the correspondent version to your installation. This packages work with Spark 2.4.0, kafka_2.12-2.3.0 and mongo superior to 2.6.
   
   ## Start the prediction request Web Application
   
@@ -175,7 +175,13 @@ Also, when running the spark-submit command, you have to add at least these two 
 
 
 ```
-## Scenario 2: Start Flight Predictor with docker compose
+## Scenario 2: Flight Predictor improvements
+In "scenario_2" the folders "Spark" and "Flask" are included. The original code of both components has been modified to insert some improvements. 
+- Spark
+As for Spark, the MakePrediction.scala file now uses environment variables to define the Kafka bootstrap servers and the MongoDB server address and port number. Besides, the environment variable `SEND_PREDICTION_TO`, located in "Build", has been added to allow Spark to send the prediction to a Kafka topic instead of to MongoDB. This removes the need of the web app to be constantly polling MongoDB until it gets a prediction. Now, the web app acts as a consumer of the Kafka topic `flight_prediction_response`, when a prediction is written to the topic, it shows it on screen. In "Spark" there is also a Dockerfile and the necessary files to build an image.
+The environment variables `MONGODB_HOST`, `MONGODB_PORT`, `BOOTSTRAP_SERVERS` (if more than one separate them with commas) and `SEND_PREDICTION_TO` need to be set when running the container. If `SEND_PREDICTION_TO` is set to mongo, the predictions will be sent to MongoDB, otherwise they will be written to the topic.
+- Flask (Web App)
+
 There is a flight_predictor.yml file in "scenario2". To start Flight_Predictor use the following command:
 ```
 docker-compose -f flight_predictor.yml up
