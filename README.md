@@ -198,7 +198,7 @@ docker-compose -f flight_predictor.yml up
 
 To start the Flight Predictor using docker compose enter the following command:
 ```
-docker-compose -f flight_predictor.yml up
+docker-compose -f flight_predictor_kafka_pred_resp.yml up
 ```
 A Spark master and two workers made up the Spark cluster. They send the predictions to the Kafka topic and the web app retrieves them. To see the predictions being written to the topic `flight_prediction_response`, another Kafka consumer can be used. After accessing the Kafka container run the following command:
 ```
