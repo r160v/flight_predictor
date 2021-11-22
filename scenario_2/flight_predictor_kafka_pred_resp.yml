@@ -40,7 +40,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
-      - SEND_PREDICTION_TO=mongo
+      - SEND_PREDICTION_TO=kafka
   spark-worker-1:
     image: crimson160/practica_fbid:spark
     container_name: worker1
@@ -56,7 +56,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
-      - SEND_PREDICTION_TO=mongo
+      - SEND_PREDICTION_TO=kafka
   spark-worker-2:
     image: crimson160/practica_fbid:spark
     container_name: worker2
@@ -72,7 +72,7 @@ services:
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
-      - SEND_PREDICTION_TO=mongo
+      - SEND_PREDICTION_TO=kafka
   
     
   flask:
@@ -84,13 +84,13 @@ services:
     ports:
       - 9999:5000
     environment:
-      - RETRIEVE_PREDICTION_FROM=mongo
+      - RETRIEVE_PREDICTION_FROM=kafka
       - MONGODB_HOST=mongodb
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
-      - TOPIC_NAME=flight_delay_classification_request
-      - TOPIC_PARTITIONS=1
-      - TOPIC_REPLICATION=1
+      - TOPIC_NAME=flight_delay_classification_request,flight_prediction_response
+      - TOPIC_PARTITIONS=1,1
+      - TOPIC_REPLICATION=1,1
    
       
 
