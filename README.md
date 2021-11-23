@@ -135,8 +135,7 @@ Please, note that in order to use spark-submit you first need to compile the cod
   sbt compile package
      
   ``` 
-The .jar file will be generated in "flight_prediction/target/scala-2.12/" folder.
-Also, when running the spark-submit command, you have to add at least these two packages with the --packages option:
+The .jar file will be generated in "flight_prediction/target/scala-2.12/" folder. Take into account that, when running the spark-submit command, you have to add at least these two packages with the --packages option:
   ```
   spark-submit --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 ./<generated_package>.jar
      
@@ -145,19 +144,25 @@ Also, when running the spark-submit command, you have to add at least these two 
   
   ## Start the prediction request Web Application
   
-  Set the `PROJECT_HOME` env variable with teh path of you cloned repository, for example:
+  - Set the `PROJECT_HOME` env variable with teh path of you cloned repository, for example:
    ```
   export PROJECT_HOME=/home/user/Desktop/practica_big_data_2019
    ```
-  Go to the `web` directory under `resources` and execute the flask web application file `predict_flask.py`:
+  - Activate the python virtual environment
+  
+In scenario_1 run:
+```
+source env/bin/activate
+```
+- Run the prediction script
+
+Go to the `web` directory under `resources` and execute the flask web application file `predict_flask.py`:
   ```
   cd practica_big_data_2019/resources/web
   python3 predict_flask.py
   
   ```
   Now, visit http://localhost:5000/flights/delays/predict_kafka and, for fun, open the JavaScript console. Enter a nonzero departure delay, an ISO-formatted date (I used 2016-12-25, which was in the future at the time I was writing this), a valid carrier code (use AA or DL if you don’t know one), an origin and destination (my favorite is ATL → SFO), and a valid flight number (e.g., 1519), and hit Submit. Watch the debug output in the JavaScript console as the client polls for data from the response endpoint at /flights/delays/predict/classify_realtime/response/.
-  
-  Quickly switch windows to your Spark console. Within 10 seconds, the length we’ve configured of a minibatch, you should see something like the following:
   
   ## Check the predictions records inserted in MongoDB
   ```
@@ -218,6 +223,7 @@ minikube start --vm-driver=virtualbox
 ```
 In this case the virtualization hypervisor used is Virtualbox. If another one is used, the vm-driver flag has to be set accordingly.
 - Deploy Kafka and Zookeeper
+
 To deploy Kafka and Zookeeper, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/kafka) is used. It is important to notice that it provides the DNS name `my-release-kafka-0.my-release-kafka-headless.default.svc.cluster.local` with port `9092` to connect to the Kafka cluster from within the Kubernetes cluster. 
 To add the Kafka repository use the following command:
 ```
@@ -228,6 +234,7 @@ To install the chart:
 helm install my-release bitnami/kafka
 ```
 - Deploy MondoDB
+
 To deploy Kafka and Zookeeper, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/mongodb) is used. It is important to notice that it provides the DNS name `mongodb-dev.default.svc.cluster.local` with port `27017` to connect to the Kafka cluster from within the Kubernetes cluster. 
 To add the MongoDB repository use the following command:
 ```
@@ -238,7 +245,9 @@ To install the chart:
 helm install mongodb-dev bitnami/mongodb --set auth.enabled=false
 ```
 - Deploy Spark
-The MakePrediction.scala file has been modified to take into account the DNS names of MongoDB and Kafka in the Kubernetes cluster. There is a "Spark" folder in "scenario_4", where a new flight_prediction_2.12-0.1.jar as been compiled and packaged. After doing this, it's necessary to create a new image using the provided Dockerfile. The files spark-deployment.yaml and spark-service.yaml are provided in "scenario_4" to create the components necessary for Spark.
+
+The files spark-deployment.yaml and spark-service.yaml are provided in "scenario_3" to create the components necessary for Spark. It's important to note the environment variable configuration.
+
 To deploy Spark:
 ```
 kubectl apply -f spark-deployment.yaml
@@ -248,6 +257,9 @@ To deploy the Spark service:
 kubectl apply -f spark-service.yaml
 ```
 - Deploy Flask
+
+The files flask-deployment.yaml and flask-service.yaml are provided in "scenario_3" to start the Flask service.
+
 To deploy Flask:
 ```
 kubectl apply -f flask-deployment.yaml
@@ -258,6 +270,7 @@ kubectl apply -f flask-service.yaml
 ```
 The Flask service is external, it provides access to the Flask app through the nodePort 30005.
 - Make Minikube assign an external IP to the Flask service
+
 List running services and take the Flask service:
 ```
 kubectl get services
@@ -267,17 +280,102 @@ Use the following command to make Minikube assign an external IP to the Flask se
 minikube service <flask_service>
 ```
 Visit [http://localhost:30005/flights/delays/predict_kafka](http://localhost:30005/flights/delays/predict_kafka) to use the application.
-## Train the prediction model using Apache Airflow
-Airflow is a platform to programmatically author, schedule and monitor workflows. It uses Directed Acyclic Graphs (DAGs) to create data pipelines. To define a DAG a DAG definition file is used.
-A DAG definition file is composed of three main parts:
+## Apache Airflow architecture
+Airflow is a platform that allows to build and run workflows. A workflow is represented as a DAG (a Directed Acyclic Graph), and contains individual pieces of work called Tasks, arranged with dependencies and data flows taken into account. 
+A DAG specifies the dependencies between Tasks, and the order in which to execute them and run retries; the Tasks themselves describe what to do, be it fetching data, running analysis, triggering other systems, or more.
+
+An Airflow installation generally consists of the following components:
+- A scheduler, which handles both triggering scheduled workflows, and submitting Tasks to the executor to run.
+- An executor, which handles running tasks. In the default Airflow installation, this runs everything inside the scheduler, but most production-suitable executors actually push task execution out to workers.
+- A webserver, which presents a handy user interface to inspect, trigger and debug the behaviour of DAGs and tasks.
+- A folder of DAG files, read by the scheduler and executor (and any workers the executor has).
+- A metadata database, used by the scheduler, executor and webserver to store state.
+Workloads
+
+### Workloads
+A DAG runs through a series of Tasks, and there are three common types of tasks:
+- Operators, predefined tasks that you can string together quickly to build most parts of your DAGs.
+- Sensors, a special subclass of Operators which are entirely about waiting for an external event to happen.
+- A TaskFlow-decorated @task, which is a custom Python function packaged up as a Task.
+
+DAGs are designed to be run many times, and multiple runs of them can happen in parallel. DAGs are parameterized, always including an interval they are “running for” (the data interval), but with other optional parameters as well.
+Tasks have dependencies declared on each other. You’ll see this in a DAG either using the >> and << operators:
+```
+first_task >> [second_task, third_task]
+third_task << fourth_task
+```
+Or, with the set_upstream and set_downstream methods:
+```
+first_task.set_downstream([second_task, third_task])
+third_task.set_upstream(fourth_task)
+```
+Both syntax forms mean the same: the second and third tasks depend on first task, and the fourth task depends on the third task.
+### User interface
+Airflow comes with a user interface that allows to see what DAGs and their tasks are doing, trigger runs of DAGs, view logs, and do some limited debugging and resolution of problems with the DAGs.
+[<img src="images/airflow_ui.png">](test)
+
+## Analysis of agile_data_science_batch_prediction_model_training DAG definition
+To define a DAG a DAG definition file is used. As can be seen in setup.py, a DAG definition file is roughly composed of five main parts:
 - Importing modules
+```
+import sys, os, re
+
+from airflow import DAG
+from airflow.operators.bash import BashOperator
+
+from datetime import datetime, timedelta
+import iso8601
+
+PROJECT_HOME = os.getenv("PROJECT_HOME")
+```
+The necessary modules of airflow are imported, as well as the `PROJECT_HOME` environment variable that is used to indicate the directory where the extracted features are located.
 - Default arguments
+```
+default_args = {
+  'owner': 'airflow',
+  'depends_on_past': False,
+  'start_date': iso8601.parse_date("2016-12-01"),
+  'retries': 3,
+  'retry_delay': timedelta(minutes=5),
+}
+```
+A dictionary of default parameters is defined which is passed to the tasks when they are created. The `retries` field indicates the number of retries that should be performed before failing the task, i.e, according to the setup.py configuration, it will attempt to execute the task 3 times before considering it failed. The `retry_delay` field sets the time between retries to 5 minutes.
 - DAG instantiation
+```
+training_dag = DAG(
+  'agile_data_science_batch_prediction_model_training',
+  default_args=default_args,
+  schedule_interval=None
+)
+```
+A DAG object is needed in order to nest the tasks into. The string "agile_data_science_batch_prediction_model_training" is the `dag_id`  which serves as a unique identifier for the DAG. The default_args dictionary created before is passed to the constructor. The `schedule_interval` field is used to define how often that DAG runs, in this case it is set to None, indicating the DAG will be only run manually.
 - Tasks definition
+```
+pyspark_bash_command = """
+spark-submit --master {{ params.master }} \
+  {{ params.base_path }}/{{ params.filename }} \
+  {{ params.base_path }}
+"""
+```
+Airflow leverages the power of Jinja Templating and provides the pipeline author with a set of built-in parameters and macros. These are the commands executed when the task runs, it has placeholders that are filled up when the tasks are defined.
+```
+train_classifier_model_operator = BashOperator(
+  task_id = "pyspark_train_classifier_model",
+  bash_command = pyspark_bash_command,
+  params = {
+    "master": "local[8]",
+    "filename": "resources/train_spark_mllib_model.py",
+    "base_path": "{}/".format(PROJECT_HOME)
+  },
+  dag=training_dag
+)
+```
+The field `task_id` is used to identify each task within a DAG and `bash_command` indicates the command the task executes, which is the one defined previously. `params` is used to fill up the arguments of the bash command with Jinja. The train_spark_mllib_model.py script is executed to train the model based on the extracted features; the output folder is /models.
 - Setting up dependencies
+
+Dependencies can be established among tasks as has been previously explained. In this case, as the only required task is `pyspark_train_classifier_model`, there is no need to declare dependencies.
 # Train the prediction model using Airflow
-- Download "scenario_1" folder
-- Install the requirements in the root of scenario_1 and the one in "resources/airflow":
+- Download "scenario_1", install python packages requirements in scenario_1 and the one in /resources/airflow:
 ```
 cd scenario_1
 pip install -r requirements.txt
@@ -309,8 +407,9 @@ airflow users create \
     --role Admin \
     --email example@mail.org
 ```
-- Make DAG visible to Airflow  *-*-*-*-*--*
-In "resources/airflow/" there is setup.py file that defines the DAG and prediction task. The default location for the DAGs is ~/airflow/dags, but more generally it is $AIRFLOW_HOME/dags. Copy setup.py to $AIRFLOW_HOME/dags (or make a symlink).
+- Make DAG visible to Airflow 
+
+In /resources/airflow there is setup.py file that defines the DAG and prediction task. The default location for the DAGs is ~/airflow/dags, but more generally it is $AIRFLOW_HOME/dags. Copy setup.py to $AIRFLOW_HOME/dags (or set a symlink).
 - Make sure that the pipeline is parsed successfully
 ```
 python $AIRFLOW_HOME/dags/setup.py
@@ -326,7 +425,7 @@ airflow tasks list agile_data_science_batch_prediction_model_training
 In this case there's only one task: pyspark_train_classifier_model.
 - Test the task using the CLI
 ```
-airflow tasks test agile_data_science_batch_prediction_model_training pyspark_train_classifier_model 2016-12-12 /*/*/*/*/*/*/*/*/*/*/*/*/*
+airflow tasks test agile_data_science_batch_prediction_model_training pyspark_train_classifier_model 2021-11-23
 ```
 The trained model files should be generated in the "models" folder.
 - Start airflow scheduler and webserver
@@ -334,5 +433,5 @@ The trained model files should be generated in the "models" folder.
 airflow webserver --port 8080
 airflow scheduler
 ```
-Vistit http://localhost:8080/home for the web version of Apache Airflow.
-
+Vistit http://localhost:8080/home for the web version of Apache Airflow. It must be somewhat similar to the following image:
+[<img src="images/agile_data_science_batch_prediction_model_training_dag.png">](test)
