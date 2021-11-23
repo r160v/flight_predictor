@@ -235,7 +235,7 @@ helm install my-release bitnami/kafka
 ```
 - Deploy MondoDB
 
-To deploy Kafka and Zookeeper, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/mongodb) is used. It is important to notice that it provides the DNS name `mongodb-dev.default.svc.cluster.local` with port `27017` to connect to the Kafka cluster from within the Kubernetes cluster. 
+To deploy MongoDB, a [Bitnami Helm chart](https://artifacthub.io/packages/helm/bitnami/mongodb) is used. It is important to notice that it provides the DNS name `mongodb-dev.default.svc.cluster.local` with port `27017` to connect to the mongo database from within the Kubernetes cluster. 
 To add the MongoDB repository use the following command:
 ```
 helm repo add bitnami https://charts.bitnami.com/bitnami (if you haven't previously done)
