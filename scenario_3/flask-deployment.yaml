@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.24.0 (4a2a0458)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: flask
+  name: flask
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: flask
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.24.0 (4a2a0458)
+      creationTimestamp: null
+      labels:
+        io.kompose.service: flask
+    spec:
+      containers:
+        - env:
+            - name: RETRIEVE_PREDICTION_FROM
+              value: mongo
+            - name: BOOTSTRAP_SERVERS
+              value: my-release-kafka-0.my-release-kafka-headless.default.svc.cluster.local:9092
+            - name: MONGODB_HOST
+              value: mongodb-dev.default.svc.cluster.local
+            - name: MONGODB_PORT
+              value: "27017"
+            - name: TOPIC_NAME
+              value: flight_delay_classification_request
+            - name: TOPIC_PARTITIONS
+              value: "1"
+            - name: TOPIC_REPLICATION
+              value: "1"
+          image: crimson160/practica_fbid:flask
+          name: flask
+          ports:
+            - containerPort: 5000
+          resources: {}
+      #imagePullSecrets:
+      #- name: regcred
+      restartPolicy: Always
+status: {}
