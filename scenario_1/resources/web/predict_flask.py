@@ -25,8 +25,8 @@ import datetime
 
 # Setup Kafka
 from kafka import KafkaProducer
-#producer = KafkaProducer(bootstrap_servers=['localhost:29092'],api_version=(0,10))
-producer = KafkaProducer(bootstrap_servers=['kafka:29092'],api_version=(0,10))
+
+producer = KafkaProducer(bootstrap_servers=['localhost:9092'],api_version=(0,10))
 PREDICTION_TOPIC = 'flight_delay_classification_request'
 
 import uuid
