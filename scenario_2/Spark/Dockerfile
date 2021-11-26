@@ -16,9 +16,11 @@ RUN export JAVA_HOME
 COPY ./spark /opt/spark
 COPY ./models /spark_models/models
 COPY ./flight_prediction_2.12-0.1.jar /
+COPY ./start.sh /
 RUN chmod -R 777 /opt/spark
 RUN chmod -R 777 /flight_prediction_2.12-0.1.jar
+RUN chmod -R 777 /start.sh
 ENV SPARK_HOME=/opt/spark
 RUN export SPARK_HOME
-CMD /opt/spark/bin/spark-submit --master $SPARK_MASTER_URL --packages org.mongodb.spark:mongo-spark-connector_2.12:3.0.1,org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 ./flight_prediction_2.12-0.1.jar
+CMD /start.sh
 

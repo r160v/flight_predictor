@@ -213,6 +213,8 @@ A Spark master and two workers made up the Spark cluster. They send the predicti
     --topic flight_prediction_response \
     --from-beginning
 ```
+By default, the workers are connecting to the master on spark://spark:7077. This can be changed using the environment variable `SPARK_MASTER_HOST` and `SPARK_MASTER_PORT`. The mapped port for the master in the yaml file corresponds to the master's web UI, accessing this page allows to see the connected workers.
+
 Visit [http://localhost:9999/flights/delays/predict_kafka](http://localhost:9999/flights/delays/predict_kafka) to use the application.
 
 ## Scenario 3: Deploy Flight Predictor using Kubernetes and Minikube

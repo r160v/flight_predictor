@@ -33,7 +33,6 @@ services:
     container_name: spark_m
     environment:
       - SPARK_MODE=master
-      - SPARK_MASTER_URL=spark://spark:7077
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
@@ -42,13 +41,14 @@ services:
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
       - SEND_PREDICTION_TO=kafka
+    ports:
+      - 8052:8080
   spark-worker-1:
     image: crimson160/practica_fbid:spark
     container_name: worker1
     environment:
       - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=512M
       - SPARK_WORKER_CORES=1
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
@@ -58,13 +58,14 @@ services:
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
       - SEND_PREDICTION_TO=kafka
+    ports:
+      - 8053:4040
   spark-worker-2:
     image: crimson160/practica_fbid:spark
     container_name: worker2
     environment:
       - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark:7077
-      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_MEMORY=512M
       - SPARK_WORKER_CORES=1
       - SPARK_RPC_AUTHENTICATION_ENABLED=no
       - SPARK_RPC_ENCRYPTION_ENABLED=no
@@ -74,6 +75,8 @@ services:
       - MONGODB_PORT=27017
       - BOOTSTRAP_SERVERS=kafka:9092
       - SEND_PREDICTION_TO=kafka
+    ports:
+      - 8054:4040
   
     
   flask:
